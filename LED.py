@@ -1,6 +1,7 @@
 import os
 import sys
 import math
+from random import randint
 
 class LED(object):
     '''AES funtions for a single block
@@ -36,31 +37,55 @@ class LED(object):
         constant = self.roundConstants[round];
         print constant & (1 << bit);
 
-    
 
-def generateRandomKey(keysize):
-    """Generates a key from random data of length `keysize`.    
-    The returned key is a string of bytes.    
-    """
-    if keysize not in (16, 24, 32):
-        emsg = 'Invalid keysize, %s. Should be one of (16, 24, 32).'
-        raise ValueError, emsg % keysize
-    return os.urandom(keysize)
+    def subBytes(self, state):
+        for i in range(0, 5): 
+            for j in range(0, 5):
+                state[i][j] = self.getSBoxValue(state[i][j] & 0xF);
+        return state
 
-def testStr(cleartext, keysize=16, modeName = "CBC"):
-    '''Test with random key, choice of mode.'''
-    print 'Random key test', 'Mode:', modeName
-    print 'cleartext:', cleartext
-    key =  generateRandomKey(keysize)
-    print 'Key:', [ord(x) for x in key]
-    mode = AESModeOfOperation.modeOfOperation[modeName]
-    cipher = encryptData(key, cleartext, mode)
-    print 'Cipher:', [ord(x) for x in cipher]
-    decr = decryptData(key, cipher, mode)
-    print 'Decrypted:', decr
+    def shiftRows(self, state):
+        for i in range(1, 5):
+            state[i] = self.leftShiftArray(state[i], i);
+        return state
+
+    def leftShiftArray(self, arr, shiftNum):
+        length = len(arr)
+        shiftNum = abs(shiftNum) % length
+        
+        while shiftNum > 0:
+            shiftNum = shiftNum - 1
+            temp = arr[0]
+            for i in range(0, length):
+                if i != length - 1:
+                    arr[i] = arr[i+1];
+                else:
+                    arr[i] = temp
+
+        return arr
+
+    def mixColumnSerial(self, state):
+        return state
+
+
     
     
 if __name__ == "__main__":
+
+    state = [[0 for x in range(5)] for x in range(5)] 
+
+    arr = [x for x in range(5)] 
+
+    for i in range(0, 5): 
+        for j in range(0, 5):
+            state[i][j] = i + j
+
+    print state
+
     obj = LED()
-    for x in range(0, 7):
-        obj.getRoundConstant(1, x);
+    state = obj.shiftRows(state)
+    print state
+
+    '''for x in range(0, 7):
+        obj.getRoundConstant(1, x); '''
+
