@@ -29,6 +29,12 @@ class LED(object):
                     0x29, 0x12, 0x24, 0x08, 0x11, 0x22, 0x04]
 
 
+    MDS = [ [ 0x4, 0x1, 0x2, 0x2],
+            [ 0x8, 0x6, 0x5, 0x6],
+            [ 0xB, 0xE, 0xA, 0x9],
+            [ 0x2, 0x2, 0xF, 0xB] ]
+
+
     def getSBoxValue(self,num):
         """Retrieves a given S-Box Value"""
         return self.sbox[num]
@@ -42,13 +48,13 @@ class LED(object):
         return state
     
     def subBytes(self, state):
-        for i in range(0, 5): 
-            for j in range(0, 5):
+        for i in range(0, len(state)): 
+            for j in range(0, len(state[i])):
                 state[i][j] = self.getSBoxValue(state[i][j] & 0xF);
         return state
 
     def shiftRows(self, state):
-        for i in range(1, 5):
+        for i in range(1, len(state)):
             state[i] = self.leftShiftArray(state[i], i);
         return state
 
@@ -68,7 +74,31 @@ class LED(object):
         return arr
 
     def mixColumnSerial(self, state):
+
+        for i in range(0, len(state)):
+            result = []
+            for j in range(0, len(state)):
+                result.append(state[j][i])
+
+            result = self.mixColumnSerialHelper(self.MDS, result)
+
+            for j in range(0, len(state)):
+                state[j][i] = result[j]
+
         return state
+
+    def mixColumnSerialHelper(self, MDS, stateVector):
+
+        result = []
+        length = len(stateVector)
+        for i in range(0, len(MDS)):
+            temp = 0
+            for j in range(0, len(MDS[i])):
+                temp = temp + ( MDS[i][j] * stateVector[i] )
+            result.append(temp)
+
+
+        return result
 
     def ledRound(self, state):
         state = self.addConstants(state)
@@ -78,6 +108,9 @@ class LED(object):
         return state
 
     def keyXOR(self, state, key):
+        for i in range(0, len(state)): 
+            for j in range(0, len(state[i])):
+                state[i][j] = state[i][j] ^ key[i][j]
         return state
 
     def ledMain(self, state, key):
@@ -90,14 +123,13 @@ class LED(object):
  
         return state
 
-    def ledMain(self, state, key1, key2):
+    def ledMain128(self, state, key1, key2):
 
         S = 12
-
         for i in range(0, S):
-            if i % 2 == 0
+            if i % 2 == 0:
                 state = self.keyXOR(state, key1)
-            else
+            else:
                 state = self.keyXOR(state, key2)
 
             for j in range(0, 5):
@@ -109,20 +141,10 @@ class LED(object):
     
 if __name__ == "__main__":
 
-    state = [[0 for x in range(5)] for x in range(5)] 
-
-    arr = [x for x in range(5)] 
-
-    for i in range(0, 5): 
-        for j in range(0, 5):
-            state[i][j] = i + j
-
-    print state
+    state = [[0 for x in range(4)] for x in range(4)]
+    key = [[0 for x in range(4)] for x in range(4)]
 
     obj = LED()
-    state = obj.shiftRows(state)
+    state = obj.ledMain(state, state)
     print state
-
-    '''for x in range(0, 7):
-        obj.getRoundConstant(1, x); '''
 
