@@ -44,7 +44,25 @@ class LED(object):
         print constant & (1 << bit);
 
 
-    def addConstants(self, state):
+    def addConstants(self, state, round):
+
+        LED = 64
+        state[1][0] ^= 1;
+        state[2][0] ^= 2;
+        state[3][0] ^= 3;
+
+        state[0][0] ^= (LED>>4)&0xf;
+        state[1][0] ^= (LED>>4)&0xf;
+        state[2][0] ^= LED & 0xf;
+        state[3][0] ^= LED & 0xf;
+
+        tmp = (self.roundConstants[round] >> 3) & 7;
+        state[0][1] ^= tmp;
+        state[2][1] ^= tmp;
+        tmp =  self.roundConstants[round] & 7;
+        state[1][1] ^= tmp;
+        state[3][1] ^= tmp;
+
         return state
     
     def subBytes(self, state):
@@ -100,8 +118,8 @@ class LED(object):
 
         return result
 
-    def ledRound(self, state):
-        state = self.addConstants(state)
+    def ledRound(self, state, round):
+        state = self.addConstants(state, round)
         state = self.subBytes(state)
         state = self.shiftRows(state)
         state = self.mixColumnSerial(state)
@@ -118,8 +136,8 @@ class LED(object):
         S = 8
         for i in range(0, S):
             state = self.keyXOR(state, key)
-            for j in range(0, 5):
-                state = self.ledRound(state)
+            for j in range(0, 4):
+                state = self.ledRound(state, i*4 + j)
  
         return state
 
@@ -132,8 +150,8 @@ class LED(object):
             else:
                 state = self.keyXOR(state, key2)
 
-            for j in range(0, 5):
-                state = self.ledRound(state)
+            for j in range(0, 4):
+                state = self.ledRound(state, i*4 + j)
 
         return state
 
