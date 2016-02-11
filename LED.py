@@ -59,7 +59,7 @@ class LED(object):
         tmp = (self.roundConstants[round] >> 3) & 7;
         state[0][1] ^= tmp;
         state[2][1] ^= tmp;
-        tmp =  self.roundConstants[round] & 7;
+        tmp = self.roundConstants[round] & 7;
         state[1][1] ^= tmp;
         state[3][1] ^= tmp;
 
@@ -112,17 +112,37 @@ class LED(object):
         for i in range(0, len(MDS)):
             temp = 0
             for j in range(0, len(MDS[i])):
-                temp = temp + ( MDS[i][j] * stateVector[i] )
+                temp = temp ^ self.fieldMult(MDS[i][j], stateVector[i])
             result.append(temp)
 
 
         return result
 
+
+    def fieldMult(self, a, b):
+        ReductionPoly = 0x3;
+        x = a
+        ret = 0
+        WORDFILTER = 0xf
+    
+        for i in range(0, 4):
+            if (b >> i) & 1:
+                ret = ret ^ x
+            if (x & 0x8):
+                x = x << 1
+                x = x ^ ReductionPoly
+            else:
+                x = x << 1
+
+        return ret & WORDFILTER;
+
+
     def ledRound(self, state, round):
-        state = self.addConstants(state, round)
+        state = self.addConstants(state, round)      
         state = self.subBytes(state)
         state = self.shiftRows(state)
         state = self.mixColumnSerial(state)
+
         return state
 
     def keyXOR(self, state, key):
@@ -156,13 +176,12 @@ class LED(object):
         return state
 
     
-    
 if __name__ == "__main__":
 
     state = [[0 for x in range(4)] for x in range(4)]
     key = [[0 for x in range(4)] for x in range(4)]
 
     obj = LED()
-    state = obj.ledMain(state, state)
+    state = obj.ledMain(state, key)
     print state
 
