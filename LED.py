@@ -182,6 +182,10 @@ if __name__ == "__main__":
     state = [[0 for x in range(4)] for x in range(4)]
     key = [[0 for x in range(4)] for x in range(4)]
 
+    obj = LED()
+    state = obj.ledMain(state, key)
+    print state
+
     count = 0
     for i in range(0, 4):
         for j in range(0, 4):
@@ -189,7 +193,6 @@ if __name__ == "__main__":
             key[i][j] = count
             count = count + 1
 
-    obj = LED()
     state = obj.ledMain(state, key)
     print state
 
