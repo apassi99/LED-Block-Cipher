@@ -44,17 +44,16 @@ class LED(object):
         print constant & (1 << bit);
 
 
-    def addConstants(self, state, round):
+    def addConstants(self, state, round, kbits):
 
-        LED = 64
         state[1][0] ^= 1;
         state[2][0] ^= 2;
         state[3][0] ^= 3;
 
-        state[0][0] ^= (LED>>4)&0xf;
-        state[1][0] ^= (LED>>4)&0xf;
-        state[2][0] ^= LED & 0xf;
-        state[3][0] ^= LED & 0xf;
+        state[0][0] ^= (kbits>>4)&0xf;
+        state[1][0] ^= (kbits>>4)&0xf;
+        state[2][0] ^= kbits & 0xf;
+        state[3][0] ^= kbits & 0xf;
 
         tmp = (self.roundConstants[round] >> 3) & 7;
         state[0][1] ^= tmp;
@@ -138,8 +137,8 @@ class LED(object):
         return ret & WORDFILTER;
 
 
-    def ledRound(self, state, round):
-        state = self.addConstants(state, round)     
+    def ledRound(self, state, round, kbits):
+        state = self.addConstants(state, round, kbits)     
         state = self.subBytes(state)
         state = self.shiftRows(state)
         state = self.mixColumnSerial(state)
@@ -151,30 +150,41 @@ class LED(object):
                 state[i][j] = state[i][j] ^ key[i][j]
         return state
 
-    def ledMain(self, state, key):
+    def ledEncrypt(self, state, key):
 
         S = 8
         state = self.keyXOR(state, key)
         for i in range(0, S):
             for j in range(0, 4):
-                state = self.ledRound(state, i*4 + j)
+                state = self.ledRound(state, i*4 + j, 64)
             state = self.keyXOR(state, key)
  
         return state
 
-    def ledMain128(self, state, key1, key2):
+    def ledEncrypt128(self, state, key1, key2):
 
         S = 12
+        state = self.keyXOR(state, key1)
         for i in range(0, S):
+            for j in range(0, 4):
+                state = self.ledRound(state, i*4 + j, 128)
+
             if i % 2 == 0:
                 state = self.keyXOR(state, key1)
             else:
                 state = self.keyXOR(state, key2)
 
-            for j in range(0, 4):
-                state = self.ledRound(state, i*4 + j)
 
         return state
+
+    def print_results(self, state):
+        s = [[str(e) for e in row] for row in state]
+        lens = [max(map(len, col)) for col in zip(*s)]
+        fmt = '  '.join('{{:{}}}'.format(x) for x in lens)
+        table = [fmt.format(*row) for row in s]
+        fmt = '\n'.join(table)
+        # fmt = '  '.join(fmt)
+        print fmt
 
     
 if __name__ == "__main__":
@@ -183,16 +193,26 @@ if __name__ == "__main__":
     key = [[0 for x in range(4)] for x in range(4)]
 
     obj = LED()
-    state = obj.ledMain(state, key)
-    print state
 
-    count = 0
-    for i in range(0, 4):
-        for j in range(0, 4):
-            state[i][j] = count
-            key[i][j] = count
-            count = count + 1
+    # count = 0
+    # for i in range(0, 4):
+    #     for j in range(0, 4):
+    #         state[i][j] = count
+    #         key[i][j] = count
+    #         count = count + 1
 
-    state = obj.ledMain(state, key)
-    print state
+    print ''
+    print "plain - text"
+    obj.print_results(state)
+    print ''
+
+    print "Key1"
+    obj.print_results(key)
+    print ''
+
+    state = obj.ledEncrypt(state, key)
+
+    print "cipher - text"
+    obj.print_results(state)
+    print ''
 
