@@ -93,15 +93,17 @@ class LED(object):
 
     def mixColumnSerial(self, state):
 
-        for i in range(0, len(state)):
-            result = []
-            for j in range(0, len(state)):
-                result.append(state[j][i])
+        temp = [0 for x in range(4)]
+        for j in range(0, 4):
 
-            result = self.mixColumnSerialHelper(self.MDS, result)
+            for i in range(0, 4):
+                sum = 0;
+                for k in range(0, 4):
+                    sum = sum ^ self.fieldMult(self.MDS[i][k], state[k][j]);
+                temp[i] = sum;
 
-            for j in range(0, len(state)):
-                state[j][i] = result[j]
+            for i in range(0, 4):
+                state[i][j] = temp[i];
 
         return state
 
@@ -114,7 +116,6 @@ class LED(object):
             for j in range(0, len(MDS[i])):
                 temp = temp ^ self.fieldMult(MDS[i][j], stateVector[i])
             result.append(temp)
-
 
         return result
 
@@ -138,11 +139,10 @@ class LED(object):
 
 
     def ledRound(self, state, round):
-        state = self.addConstants(state, round)      
+        state = self.addConstants(state, round)     
         state = self.subBytes(state)
         state = self.shiftRows(state)
         state = self.mixColumnSerial(state)
-
         return state
 
     def keyXOR(self, state, key):
@@ -154,10 +154,11 @@ class LED(object):
     def ledMain(self, state, key):
 
         S = 8
+        state = self.keyXOR(state, key)
         for i in range(0, S):
-            state = self.keyXOR(state, key)
             for j in range(0, 4):
                 state = self.ledRound(state, i*4 + j)
+            state = self.keyXOR(state, key)
  
         return state
 
@@ -180,6 +181,13 @@ if __name__ == "__main__":
 
     state = [[0 for x in range(4)] for x in range(4)]
     key = [[0 for x in range(4)] for x in range(4)]
+
+    count = 0
+    for i in range(0, 4):
+        for j in range(0, 4):
+            state[i][j] = count
+            key[i][j] = count
+            count = count + 1
 
     obj = LED()
     state = obj.ledMain(state, key)
