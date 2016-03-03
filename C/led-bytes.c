@@ -51,7 +51,7 @@ unsigned char FieldMult(unsigned char a, unsigned char b)
 		}
 		else x <<= 1;
 	}
-	return ret&WORDFILTER;
+	return ret & WORDFILTER;
 }
 
 void AddKey(unsigned char state[4][4], unsigned char* keyBytes, int step)
@@ -190,7 +190,7 @@ int main(int argc, char*argv[])
 	unsigned char input [8] = {0, 0, 0, 0, 0, 0, 0, 0};
 	unsigned char key [16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	LED_enc(&input[0], &key[0], 64);
-	printf("C = "); for(i = 0; i < 8; i++) printf("%02d ", input[i]); printf("\n\n");
+	//printf("C = "); for(i = 0; i < 8; i++) printf("%02x ", input[i]); printf("\n\n");
 
 	/* printf("LED-64: \n");
 	TestVectors(64);
