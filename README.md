@@ -3,6 +3,7 @@
 ## Compiling
 
 1) arm-linux-gnueabi-g++ -static main.cpp -o main
+
 2) arm-linux-gnueabi-gcc main.c -o main
 
 ## Running on Gem5
