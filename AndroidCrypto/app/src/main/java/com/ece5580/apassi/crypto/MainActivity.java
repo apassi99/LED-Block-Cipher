@@ -13,13 +13,6 @@ public class MainActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        LED led = new LED();
-        Log.i("MainActivity", led.getMyString());
-
-        byte [] arr = null;
-        byte [] key = null;
-        byte [] result = led.encrypt(arr, key);
     }
 
 
