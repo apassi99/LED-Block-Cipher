@@ -38,21 +38,7 @@ const unsigned char sbox[16] = {12, 5, 6, 11, 9, 0, 10, 13, 3, 14, 15, 8, 4, 7, 
 const unsigned char WORDFILTER = 0xF;
 
 int DEBUG = 0;
-unsigned char FieldMult(unsigned char a, unsigned char b)
-{
-	const unsigned char ReductionPoly = 0x3;
-	unsigned char x = a, ret = 0;
-	int i;
-	for(i = 0; i < 4; i++) {
-		if((b>>i)&1) ret ^= x;
-		if(x&0x8) {
-			x <<= 1;
-			x ^= ReductionPoly;
-		}
-		else x <<= 1;
-	}
-	return ret & WORDFILTER;
-}
+
 
 void AddKey(unsigned char state[4][4], unsigned char* keyBytes, int step)
 {
@@ -107,6 +93,22 @@ void ShiftRow(unsigned char state[4][4])
 		for(j = 0; j < 4; j++)
 			state[i][j] = tmp[(j+i)%4];
 	}
+}
+
+unsigned char FieldMult(unsigned char a, unsigned char b)
+{
+	const unsigned char ReductionPoly = 0x3;
+	unsigned char x = a, ret = 0;
+	int i;
+	for(i = 0; i < 4; i++) {
+		if((b>>i)&1) ret ^= x;
+		if(x&0x8) {
+			x <<= 1;
+			x ^= ReductionPoly;
+		}
+		else x <<= 1;
+	}
+	return ret & WORDFILTER;
 }
 
 void MixColumn(unsigned char state[4][4])
