@@ -3,8 +3,13 @@
 long long state = 0x123456789abcdef0;
 long long key   = 0xfedcba9876543210;
 
+unsigned short first_col  = 0x48b2;
+unsigned short second_col = 0x16e2;
+unsigned short third_col  = 0x25af;
+unsigned short fourth_col = 0x269b;
 
-const unsigned char sbox[256] = {
+
+const long long sbox[256] = {
 
 	204, 197, 198, 203, 201, 192, 202, 205, 195, 
 	206, 207, 200, 196, 199, 193, 194, 92, 
@@ -40,6 +45,41 @@ const unsigned char sbox[256] = {
 	46, 47, 40, 36, 39, 33, 34
 };
 
+const long long field_mult[256] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 
+	1, 2, 3, 4, 5, 6, 7, 8, 
+	9, 10, 11, 12, 13, 14, 15, 0, 
+	2, 4, 6, 8, 10, 12, 14, 3, 
+	1, 7, 5, 11, 9, 15, 13, 0, 
+	3, 6, 5, 12, 15, 10, 9, 11, 
+	8, 13, 14, 7, 4, 1, 2, 0, 
+	4, 8, 12, 3, 7, 11, 15, 6, 
+	2, 14, 10, 5, 1, 13, 9, 0, 
+	5, 10, 15, 7, 2, 13, 8, 14, 
+	11, 4, 1, 9, 12, 3, 6, 0, 
+	6, 12, 10, 11, 13, 7, 1, 5, 
+	3, 9, 15, 14, 8, 2, 4, 0, 
+	7, 14, 9, 15, 8, 1, 6, 13, 
+	10, 3, 4, 2, 5, 12, 11, 0, 
+	8, 3, 11, 6, 14, 5, 13, 12, 
+	4, 15, 7, 10, 2, 9, 1, 0, 
+	9, 1, 8, 2, 11, 3, 10, 4, 
+	13, 5, 12, 6, 15, 7, 14, 0, 
+	10, 7, 13, 14, 4, 9, 3, 15, 
+	5, 8, 2, 1, 11, 6, 12, 0, 
+	11, 5, 14, 10, 1, 15, 4, 7, 
+	12, 2, 9, 13, 6, 8, 3, 0, 
+	12, 11, 7, 5, 9, 14, 2, 10, 
+	6, 1, 13, 15, 3, 4, 8, 0, 
+	13, 9, 4, 1, 12, 8, 5, 2, 
+	15, 11, 6, 3, 14, 10, 7, 0, 
+	14, 15, 1, 13, 3, 2, 12, 9, 
+	7, 6, 8, 4, 10, 11, 5, 0, 
+	15, 13, 2, 9, 6, 4, 11, 1, 
+	14, 12, 3, 8, 7, 5, 10
+};
+
 void AddKey() {
 	state ^= key;
 }
@@ -64,13 +104,51 @@ void AddConstants(int r) {
 
 void SubCell()
 {
+	unsigned char temp1 = state & 0xff;
+	state = (state & 0xffffffffffffff00) | sbox[temp1];
 
+	temp1 = (state >> 8) & 0xff;
+	state = (state & 0xffffffffffff00ff) | sbox[temp1] << 8;
+
+	temp1 = (state >> 16) & 0xff;
+	state = (state & 0xffffffffff00ffff) | sbox[temp1] << 16;
+
+	temp1 = (state >> 24) & 0xff;
+	state = (state & 0xffffffff00ffffff) | sbox[temp1] << 24;
+
+	temp1 = (state >> 32) & 0xff;
+	state = (state & 0xffffff00ffffffff) | sbox[temp1] << 32;
+
+	temp1 = (state >> 40) & 0xff;
+	state = (state & 0xffff00ffffffffff) | sbox[temp1] << 40;
+
+	temp1 = (state >> 48) & 0xff;
+	state = (state & 0xff00ffffffffffff) | sbox[temp1] << 48;
+
+	temp1 = (state >> 56) & 0xff;
+	state = (state & 0x00ffffffffffffff) | sbox[temp1] << 56;
+}
+
+void ShiftRow()
+{
+	long long temp =  ( (state & 0x0000f00000000000) >> 12 ) |
+					  ( (state & 0x00000000ff000000) >> 8  ) |
+					  ( (state & 0x000000000000fff0) >> 4  );
+
+
+	long long temp1 = ( (state & 0x00000fff00000000) << 4  ) |
+					  ( (state & 0x0000000000ff0000) << 8  ) |
+					  ( (state & 0x000000000000000f) << 12 ) | 
+					  ( (state & 0xffff000000000000)       );
+
+	state = temp | temp1;
 }
 
 
 int main(int argc, char*argv[]) {
 
-	AddConstants(2);
+	//AddConstants(2);
+	ShiftRow();
 	printf( " %llu \n ", state);
 	return 0;
 }
