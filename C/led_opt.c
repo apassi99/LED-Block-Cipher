@@ -1,13 +1,38 @@
 #include <stdio.h>
 
-long long state = 0x123456789abcdef0;
-long long key   = 0xfedcba9876543210;
+// long long state = 0x123456789abcdef0;
+// long long key   = 0xfedcba9876543210;
+// long long prev_state = 0x123456789abcdef0;
+
+long long state = 0x0;
+long long key   = 0x0;
+long long prev_state = 0x0;
 
 unsigned short first_col  = 0x48b2;
 unsigned short second_col = 0x16e2;
 unsigned short third_col  = 0x25af;
 unsigned short fourth_col = 0x269b;
 
+unsigned short first_row  = 0x4122;
+unsigned short second_row = 0x8656;
+unsigned short third_row  = 0xbea9;
+unsigned short fourth_row = 0x22fb;
+
+unsigned char FieldMult(unsigned char a, unsigned char b)
+{
+	const unsigned char ReductionPoly = 0x3;
+	unsigned char x = a, ret = 0;
+	int i;
+	for(i = 0; i < 4; i++) {
+		if((b>>i)&1) ret ^= x;
+		if(x&0x8) {
+			x <<= 1;
+			x ^= ReductionPoly;
+		}
+		else x <<= 1;
+	}
+	return ret & 0xF;
+}
 
 const long long sbox[256] = {
 
@@ -144,11 +169,182 @@ void ShiftRow()
 	state = temp | temp1;
 }
 
+// unsigned char FieldMult(unsigned char a, unsigned char b) {
+
+// 	// This must be a general purpose register
+// 	unsigned char temp = field_mult(a & 0xf, b & 0xf);
+// }
+
+long long MixColumnHelper1(unsigned short row) {
+
+	long long temp  = ( (row >> 8) & 0xf0 ) | ( (prev_state >> 60) & 0xf);
+	temp = field_mult[temp];
+
+	long long temp1 = ( (row >> 4) & 0xf0 ) | ( (prev_state >> 44) & 0xf);
+	temp1 = field_mult[temp1];
+
+	long long temp2 = ( row & 0xf0 ) | ( (prev_state >> 28) & 0xf);
+	temp2 = field_mult[temp2];
+
+	long long temp3 = ( (row << 4) & 0xf0 ) | ( (prev_state >> 12) & 0xf);
+	temp3 = field_mult[temp3];
+
+	return (temp1 ^ temp2 ^ temp3 ^ temp) & 0xff;
+}
+
+long long MixColumnHelper2(unsigned short row) {
+	long long temp  = ( (row >> 8) & 0xf0 ) | ( (prev_state >> 56) & 0xf);
+	temp = field_mult[temp];
+
+	long long temp1 = ( (row >> 4) & 0xf0 ) | ( (prev_state >> 40) & 0xf);
+	temp1 = field_mult[temp1];
+
+	long long temp2 = ( row & 0xf0 ) | ( (prev_state >> 24) & 0xf);
+	temp2 = field_mult[temp2];
+
+	long long temp3 = ( (row << 4) & 0xf0 ) | ( (prev_state >> 8) & 0xf);
+	temp3 = field_mult[temp3];
+
+	return (temp1 ^ temp2 ^ temp3 ^ temp) & 0xff;
+}
+
+long long MixColumnHelper3(unsigned short row){
+
+	long long temp  = ( (row >> 8) & 0xf0 ) | ( (prev_state >> 52) & 0xf);
+	temp = field_mult[temp];
+
+	long long temp1 = ( (row >> 4) & 0xf0 ) | ( (prev_state >> 36) & 0xf);
+	temp1 = field_mult[temp1];
+
+	long long temp2 = ( row & 0xf0 ) | ( (prev_state >> 20) & 0xf);
+	temp2 = field_mult[temp2];
+
+	long long temp3 = ( (row << 4) & 0xf0 ) | ( (prev_state >> 4) & 0xf);
+	temp3 = field_mult[temp3];
+
+	return (temp1 ^ temp2 ^ temp3 ^ temp) & 0xff;
+}
+
+long long MixColumnHelper4(unsigned short row){
+
+	/* Fourth ROW */
+	long long temp  = ( (row >> 8) & 0xf0 ) | ( (prev_state >> 48) & 0xf);
+	temp = field_mult[temp];
+
+	long long temp1 = ( (row >> 4) & 0xf0 ) | ( (prev_state >> 32) & 0xf);
+	temp1 = field_mult[temp1];
+
+	long long temp2 = ( row & 0xf0 ) | ( (prev_state >> 16) & 0xf);
+	temp2 = field_mult[temp2];
+
+	long long temp3 = ( (row << 4) & 0xf0 ) | (prev_state & 0xf);
+	temp3 = field_mult[temp3];
+
+	return (temp1 ^ temp2 ^ temp3 ^ temp) & 0xff;
+}
+
+
+void MixColumn()
+{
+
+	prev_state = state;
+	long long temp  = MixColumnHelper1(first_row);
+	state = (state & 0x0fffffffffffffff) | (temp << 60);
+
+
+	temp  = MixColumnHelper1(second_row);
+	state = (state & 0xffff0fffffffffff) | (temp << 44);
+	
+	temp  = MixColumnHelper1(third_row);
+	state = (state & 0xffffffff0fffffff) | (temp << 28);
+	
+	temp  = MixColumnHelper1(fourth_row);
+	state = (state & 0xffffffffffff0fff) | (temp << 12);
+
+	printf( " %llx \n ", state);
+
+
+	prev_state = state;
+	/* Second ROW State Variation */
+	temp  = MixColumnHelper2(first_row);
+	state = (state & 0xf0ffffffffffffff) | (temp << 56);
+
+	printf( " M  %llx \n ", state);
+	
+
+	temp  = MixColumnHelper2(second_row);
+	state = (state & 0xfffff0ffffffffff) | (temp << 40);
+	
+	temp  = MixColumnHelper2(third_row);
+	state = (state & 0xfffffffff0ffffff) | (temp << 24);
+	
+	temp  = MixColumnHelper2(fourth_row);
+	state = (state & 0xfffffffffffff0ff) | (temp << 8);
+
+	printf( " %llx \n ", state);
+
+
+	prev_state = state;
+	
+	/* Third ROW State Variation */
+	temp  = MixColumnHelper3(first_row);
+	state = (state & 0xff0fffffffffffff) | (temp << 52);
+	
+
+	temp  = MixColumnHelper3(second_row);
+	state = (state & 0xffffff0fffffffff) | (temp << 36);
+
+	temp  = MixColumnHelper3(third_row);
+	state = (state & 0xffffffffff0fffff) | (temp << 20);
+
+	temp  = MixColumnHelper3(fourth_row);
+	state = (state & 0xffffffffffffff0f) | (temp << 4);
+
+	printf( " %llx \n ", state);
+
+
+	prev_state = state;
+	/* Fourth ROW State Variation */
+	temp  = MixColumnHelper4(first_row);
+	state = (state & 0xfff0ffffffffffff) | (temp << 48);
+
+	temp  = MixColumnHelper4(second_row);
+	state = (state & 0xfffffff0ffffffff) | (temp << 32);
+
+	temp  = MixColumnHelper4(third_row);
+	state = (state & 0xfffffffffff0ffff) | (temp << 16);
+
+	temp  = MixColumnHelper4(fourth_row);
+	state = (state & 0xfffffffffffffff0) | (temp);
+
+}
+
 
 int main(int argc, char*argv[]) {
 
 	//AddConstants(2);
-	ShiftRow();
-	printf( " %llu \n ", state);
+	//ShiftRow();
+	MixColumn();
+
+
+	int LED = 64;
+	int RN = 48;
+	if(LED <= 64)
+		RN = 32;
+	int i, j;
+	AddKey();
+	for(i = 0; i < RN/4; i++){
+		for(j = 0; j < 4; j++)
+		{
+			AddConstants(i*4+j);
+			SubCell();
+			ShiftRow();
+			MixColumn();
+		}
+		AddKey();
+	}
+
+
+	printf( " %llx \n ", state);
 	return 0;
 }
