@@ -6,6 +6,10 @@
 
 2) arm-linux-gnueabi-gcc main.c -o main
 
+## Optimization 
+
+arm-linux-gnueabi-gcc --help=optimizer
+
 ## Running on Gem5
 
 build/ARM/gem5.opt --stats-file=out.txt configs/example/se.py -c main
