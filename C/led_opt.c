@@ -324,7 +324,7 @@ int main(int argc, char*argv[]) {
 
 	//AddConstants(2);
 	//ShiftRow();
-	MixColumn();
+	//MixColumn();
 
 
 	int LED = 64;
